@@ -64,24 +64,15 @@ private:
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<Move::Feedback>();
     auto result = std::make_shared<Move::Result>();
-    /*
-    for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
-      // Check if there is a cancel request
-      if (goal_handle->is_canceling()) {
+
+    // Check if goal is done
+    if (goal_handle->is_canceling()) {
         result->status = false;
         goal_handle->canceled(result);
         RCLCPP_INFO(this->get_logger(), "Goal canceled");
         return;
-      }
-      // Update sequence
-      // Publish feedback
-      goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publish feedback");
-
-      loop_rate.sleep();
     }
-    */
-    // Check if goal is done
+
     if (rclcpp::ok()) {
       result->status = true;
       goal_handle->succeed(result);
