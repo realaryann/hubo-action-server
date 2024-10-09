@@ -27,7 +27,7 @@ enum MELKCOMMAND
     MELK_DEMO_INITIALPOSITION,
     MELK_DRAW_RECTANGLE,
 };
-
+/*
 if (msg.data == std::string("home_position")) {
         RCLCPP_INFO(this->get_logger(), "Sending robot to home position");
         USER_COMMAND cmd;
@@ -58,6 +58,7 @@ if (msg.data == std::string("home_position")) {
         QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
         client->RBSendData(tempSendData);
     }
+*/
 
 class MyActionServer : public rclcpp::Node
 {
