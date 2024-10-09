@@ -33,38 +33,6 @@ enum MELKCOMMAND
     MELK_DEMO_INITIALPOSITION,
     MELK_DRAW_RECTANGLE,
 };
-/*
-if (msg.data == std::string("home_position")) {
-        RCLCPP_INFO(this->get_logger(), "Sending robot to home position");
-        USER_COMMAND cmd;
-        cmd.COMMAND_TARGET = 10;
-        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_HOMEPOS;
-        LAN_GUI2PODO tempDATA;
-        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
-        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
-        client->RBSendData(tempSendData);
-    } else if (msg.data == std::string("wheel_position")) {
-        RCLCPP_INFO(this->get_logger(), "Sending robot to wheel position");
-        USER_COMMAND cmd;
-        cmd.COMMAND_TARGET = 10;
-        cmd.COMMAND_DATA.USER_PARA_CHAR[0]=0;
-        cmd.COMMAND_DATA.USER_COMMAND = MELK_WHEELCMD;
-        LAN_GUI2PODO tempDATA;
-        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
-        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
-        client->RBSendData(tempSendData);
-    } else if (msg.data == std::string("walking_position")) {
-        RCLCPP_INFO(this->get_logger(), "Sending robot to walking position");
-        USER_COMMAND cmd;
-        cmd.COMMAND_TARGET = 10;
-        cmd.COMMAND_DATA.USER_PARA_INT[0] = 0;
-        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_WALKREADYPOS;
-        LAN_GUI2PODO tempDATA;
-        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
-        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
-        client->RBSendData(tempSendData);
-    }
-*/
 
 class MyActionServer : public rclcpp::Node
 {
