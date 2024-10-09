@@ -2,12 +2,62 @@
 #include <memory>
 #include <thread>
 #include <string>
+#include <QTimer>
+#include "hubo_core/PODOClient.h"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include <std_msgs/msg/string.hpp>
 #include "custom_interfaces/action/huboaction.hpp"
 
+
+enum MELKCOMMAND
+{
+    MELK_NO_ACT = 100,
+    MELK_GO_WALKREADYPOS,
+    MELK_GO_HOMEPOS,
+    MELK_WHEELCMD,
+    MELK_GOTODES,
+    MELK_INFINITY,
+    MELK_MOVEHAND,
+    MELK_SHOW_INFO,
+    MELK_SHOW_JOINT_VALUES,
+    MELK_MOVE_JOINTS,
+    MELK_DEMO_MOVEHAND,
+    MELK_DEMO_INITIALPOSITION,
+    MELK_DRAW_RECTANGLE,
+};
+
+if (msg.data == std::string("home_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to home position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_HOMEPOS;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    } else if (msg.data == std::string("wheel_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to wheel position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_PARA_CHAR[0]=0;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_WHEELCMD;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    } else if (msg.data == std::string("walking_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to walking position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_PARA_INT[0] = 0;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_WALKREADYPOS;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    }
 
 class MyActionServer : public rclcpp::Node
 {
@@ -49,7 +99,7 @@ private:
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     (void)goal_handle;
     return rclcpp_action::CancelResponse::ACCEPT;
-    // Jumps to execute?
+    // Jumps to execu-te?
   }
 
   void handle_accepted(const std::shared_ptr<GoalHandleMove> goal_handle)
@@ -67,7 +117,6 @@ private:
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<Move::Feedback>();
     auto result = std::make_shared<Move::Result>();
-
     if (goal_handle->is_canceling()) {
         result->status = false;
         goal_handle->canceled(result);
