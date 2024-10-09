@@ -3,6 +3,12 @@
 #include <thread>
 #include <string>
 #include <QTimer>
+#include <QEventLoop>
+#include <QCoreApplication>
+#include "Reader.h"
+#include <QThread>
+#include "hubo_core/JointInformation.h"
+#include "hubo_core/Terminator.h"
 #include "hubo_core/PODOClient.h"
 
 #include "rclcpp/rclcpp.hpp"
@@ -67,7 +73,7 @@ public:
   using GoalHandleMove = rclcpp_action::ServerGoalHandle<Move>;
 
   explicit MyActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : Node("hubo_action_server", options)
+  : Node("hubo_action_server", options), timer(new QTimer(this))
   {
     using namespace std::placeholders;
 
@@ -81,14 +87,17 @@ public:
   }
 
 private:
+  PODOClient* client;
+  QTimer *timer;
   rclcpp_action::Server<Move>::SharedPtr action_server_;
-
+  std::shared_ptr<const Move::Goal> storegoal;
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const Move::Goal> goal)
   {
     RCLCPP_INFO(this->get_logger(), "Received goal request with message %s", std::string(goal->msg).c_str());
     (void)uuid;
+    storegoal = goal;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
     // Jumps to execute?
   }
@@ -124,7 +133,38 @@ private:
         RCLCPP_INFO(this->get_logger(), "Goal canceled");
         return;
     }
-
+    // Podo Goal routing
+    if (std::string(storegoal->msg) == std::string("home_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to home position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_HOMEPOS;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    } else if (std::string(storegoal->msg) == std::string("wheel_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to wheel position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_PARA_CHAR[0]=0;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_WHEELCMD;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    } else if (std::string(storegoal->msg) == std::string("walking_position")) {
+        RCLCPP_INFO(this->get_logger(), "Sending robot to walking position");
+        USER_COMMAND cmd;
+        cmd.COMMAND_TARGET = 10;
+        cmd.COMMAND_DATA.USER_PARA_INT[0] = 0;
+        cmd.COMMAND_DATA.USER_COMMAND = MELK_GO_WALKREADYPOS;
+        LAN_GUI2PODO tempDATA;
+        memcpy(&(tempDATA.UserCMD), &cmd, sizeof(USER_COMMAND));
+        QByteArray tempSendData = QByteArray::fromRawData((char *)&tempDATA, sizeof(LAN_GUI2PODO));
+        client->RBSendData(tempSendData);
+    }
+    // End 
     if (rclcpp::ok()) {
       result->status = true;
       goal_handle->succeed(result);
@@ -136,7 +176,24 @@ private:
 
 int main(int argc, char ** argv)
 {
+  QCoreApplication app(argc, argv);
+  Terminator *terminator = new Terminator();
+  QThread *terminatorThread = new QThread();
+  terminator->moveToThread(terminatorThread);
+  QObject::connect(terminatorThread, &QThread::started, terminator, &Terminator::startChecking);
+  QObject::connect(terminatorThread, &QThread::finished, terminator, &QObject::deleteLater);
+  QObject::connect(terminatorThread, &QThread::finished, terminatorThread, &QObject::deleteLater);
+  terminatorThread->start();
   rclcpp::init(argc, argv);
+  PODOClient client;
+  client.RBConnect();
+  Reader *reader = new Reader(&client);
+  QThread *readerThread = new QThread;
+  reader->moveToThread(readerThread);
+  QObject::connect(readerThread, &QThread::started, reader, &Reader::startLoop);
+  QObject::connect(readerThread, &QThread::finished, reader, &QObject::deleteLater);
+  QObject::connect(readerThread, &QThread::finished, readerThread, &QObject::deleteLater);
+  readerThread->start();
 
   auto action_server = std::make_shared<MyActionServer>();
     
